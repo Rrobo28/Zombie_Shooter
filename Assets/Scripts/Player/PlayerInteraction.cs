@@ -9,16 +9,12 @@ public class PlayerInteraction : MonoBehaviour
     public Transform RifleSocket;
     public Transform PistolSocket;
     public Transform MeleeSocket;
-    PlayerShooting playerShooting;
-    PlayerAnimations playerAnimations;
-    PlayerInventory playerInventory;
 
+    Player PlayerScript;
 
     private void Start()
     {
-        playerShooting = GetComponent<PlayerShooting>();
-        playerAnimations = GetComponent<PlayerAnimations>();
-        playerInventory = GetComponent<PlayerInventory>();
+        PlayerScript = GetComponent<Player>();
     }
 
     public void AddObject(GameObject Object)
@@ -30,10 +26,9 @@ public class PlayerInteraction : MonoBehaviour
         CurrentlyInteractingWith.Remove(Object);
     }
 
-
-    void Update()
+    public void StartInteraction()
     {
-        if(Input.GetButtonDown("Interact") && CurrentlyInteractingWith.Count > 0)
+        if (CurrentlyInteractingWith.Count > 0)
         {
             PickUp(CurrentlyInteractingWith[0]);
         }
@@ -41,39 +36,32 @@ public class PlayerInteraction : MonoBehaviour
 
     void PickUp(GameObject Object)
     {
-
-        Debug.Log("PickUP");
-
         Interact interact = Object.GetComponent<Interact>();
 
         if (interact.type == Interact.ItemType.Rifle)
         {
-            playerInventory.PickupPrimary(Object);
+            PlayerScript.PlayerInventory.PickupPrimary(Object);
 
             Object.transform.parent = RifleSocket;
 
-            if (playerShooting.CurrentGun == null)
+            if (PlayerScript.PlayerShooting.CurrentGun == null)
             {
-                playerInventory.SwapToPrimary();
+                PlayerScript.PlayerInventory.SwapToPrimary();
             }
             else
             {
                 Object.SetActive(false);
             }
-
-
-
-
         }
         else if (interact.type == Interact.ItemType.Pistol)
         {
-            playerInventory.PickupSecondary(Object);
+            PlayerScript.PlayerInventory.PickupSecondary(Object);
 
             Object.transform.parent = PistolSocket;
 
-            if (playerShooting.CurrentGun == null)
+            if (PlayerScript.PlayerShooting.CurrentGun == null)
             {
-                playerInventory.SwapToSecondary();
+                PlayerScript.PlayerInventory.SwapToSecondary();
             }
             else
             {
@@ -82,58 +70,50 @@ public class PlayerInteraction : MonoBehaviour
         }
         else if (interact.type == Interact.ItemType.Melee)
         {
-            playerInventory.PickupMelee(Object);
+            PlayerScript.PlayerInventory.PickupMelee(Object);
 
             Object.transform.parent = MeleeSocket;
 
-            if (playerShooting.CurrentGun == null && GetComponent<PlayerMelee>().weapon == null)
+            if (PlayerScript.PlayerShooting.CurrentGun == null && GetComponent<PlayerMelee>().weapon == null)
             {
-                playerInventory.SwapToMelee();
+                PlayerScript.PlayerInventory.SwapToMelee();
             }
             else
             {
                 Object.SetActive(false);
             }
         }
+        else if (interact.type == Interact.ItemType.Consumable)
+        {
+            Consumable consumable = interact.GetComponent<Consumable>();
+
+            if (consumable.type == Consumable.ConsumableType.RifleAmmo)
+            {
+                PlayerScript.PlayerInventory.RifleAmmo += consumable.AmmoQuantity;
+
+                if (PlayerScript.PlayerShooting.CurrentGun != null && PlayerScript.PlayerShooting.CurrentGun.GetComponent<Interact>().type == Interact.ItemType.Rifle)
+                {
+                    PlayerScript.PlayerHUD.UpdateTotalAmmoText(PlayerScript.PlayerInventory.RifleAmmo);
+                }
+
+            }
+            else if (consumable.type == Consumable.ConsumableType.PistolAmmo)
+            {
+                PlayerScript.PlayerInventory.PistolAmmo += consumable.AmmoQuantity;
+                if (PlayerScript.PlayerShooting.CurrentGun != null && PlayerScript.PlayerShooting.CurrentGun.GetComponent<Interact>().type == Interact.ItemType.Pistol)
+                {
+                    PlayerScript.PlayerHUD.UpdateTotalAmmoText(PlayerScript.PlayerInventory.PistolAmmo);
+                }
+            }
+            Destroy(interact.gameObject);
+        }
 
         Object.transform.localPosition = Vector3.zero;
         Object.transform.localRotation = Quaternion.identity;
 
-
         interact.DissableInteraction();
 
         RemoveObject(Object);
-
-        if (interact.type == Interact.ItemType.Consumable)
-        {
-            Consumable consumable = interact.GetComponent<Consumable>();
-
-            if(consumable.type == Consumable.ConsumableType.RifleAmmo)
-            {
-                playerInventory.RifleAmmo += consumable.AmmoQuantity;
-
-                if(playerShooting.CurrentGun.GetComponent<Interact>().type == Interact.ItemType.Rifle)
-                {
-                    GetComponent<PlayerHUD>().UpdateTotalAmmoText(playerInventory.RifleAmmo);
-                }
-              
-            }
-            else if (consumable.type == Consumable.ConsumableType.PistolAmmo)
-            {
-                playerInventory.PistolAmmo += consumable.AmmoQuantity;
-                if (playerShooting.CurrentGun.GetComponent<Interact>().type == Interact.ItemType.Pistol)
-                {
-                    GetComponent<PlayerHUD>().UpdateTotalAmmoText(playerInventory.PistolAmmo);
-                }
-            }
-
-            Destroy(interact.gameObject);
-
-        }
-
-
-
-
 
       
     }

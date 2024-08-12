@@ -8,7 +8,6 @@ public class PlayerHUD : MonoBehaviour
     public TextMeshProUGUI MagAmmoText;
     public TextMeshProUGUI TotalAmmoText;
 
-
     public void UpdateMagAmmoText(int mag)
     {
         MagAmmoText.text = mag.ToString();
@@ -19,7 +18,6 @@ public class PlayerHUD : MonoBehaviour
     }
     public void UpdateAmmoText(int Mag,int Total)
     {
-       
         MagAmmoText.text = Mag.ToString();
         TotalAmmoText.text = Total.ToString();
     }

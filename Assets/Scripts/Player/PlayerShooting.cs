@@ -1,67 +1,43 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.PlasticSCM.Editor.WebApi;
 using UnityEngine;
+using static Gun;
 
 public class PlayerShooting : MonoBehaviour
 {
-
-    PlayerAnimations thisAnim;
+    Player PlayerScript;
 
     bool ShootHeld;
-
     public Gun CurrentGun;
-
-    PlayerInventory inventory;
-
+  
     bool Reloading;
-
     bool ThrowingGrenade;
 
     public GameObject Grenade;
-
     public Transform Hand;
 
     GameObject newGranade;
 
     void Start()
     {
-        inventory = GetComponent<PlayerInventory>();
-        thisAnim = GetComponent<PlayerAnimations>();
+        PlayerScript = GetComponent<Player>();
     }
     // Update is called once per frame
-    void Update()
+    public void StartGrenadeThrow()
     {
-
-        if (Input.GetKeyDown(KeyCode.G) && !ThrowingGrenade)
+        if (!ThrowingGrenade)
         {
-            StartThrow();
+            PlayerScript.PlayerMovement.CanMove = false;
+            PlayerScript.PlayerAnimations.SetSpeed(0);
+            CreateGrenade();
         }
-
-
-        if (CurrentGun == null)
-        {
-            return;
-        }
-
-
-        if(Input.GetMouseButton(0) && !ThrowingGrenade)
-        {
-            Shoot();
-        }
-        else
-        {
-            StopShoot();
-        }
-
-      
     }
 
-    void StartThrow()
+
+
+    void CreateGrenade()
     {
         ThrowingGrenade = true;
 
-        thisAnim.SetWeaponType(10);
+        PlayerScript.PlayerAnimations.SetWeaponType(10);
 
         newGranade = Instantiate(Grenade, Hand.transform.position, Quaternion.identity);
 
@@ -83,48 +59,66 @@ public class PlayerShooting : MonoBehaviour
 
     public void EndGrenadeThrow()
     {
+        PlayerScript.PlayerMovement.CanMove = true;
         ThrowingGrenade = false;
 
         newGranade = null;
 
-        thisAnim.SetWeaponType(0);
+        PlayerScript.PlayerAnimations.SetWeaponType(0);
+
     }
 
 
-    void Shoot()
+    public void ShootPressed()
+    {
+        if (ThrowingGrenade || !CurrentGun) return;
+
+        StartShoot();
+    }
+    public void ShootReleased()
+    {
+        StopShoot();
+    }
+
+
+    void StartShoot()
     {
         ShootHeld = true;
 
-       
-        Interact WeaponType = CurrentGun.GetComponent<Interact>();
+        FireRate RateOfFire = CurrentGun.GetComponent<Gun>().fireRate;
 
+        PlayerScript.PlayerAnimations.SetFullyAuto(RateOfFire == FireRate.Auto ? true:false);
 
-        if(WeaponType.type == Interact.ItemType.Pistol)
-        {
+        if (CurrentGun.MagSize > 0)
+        { 
+            PlayerScript.PlayerAnimations.SetBodyHorizontal(0.7f);
+            PlayerScript.PlayerAnimations.SetHeadHorizontal(-1f);
         }
 
-       
-        thisAnim.SetBodyHorizontal(0.7f);
-        thisAnim.SetHeadHorizontal(-1f);
-
-        thisAnim.SetShoot(true);
-        thisAnim.SetFullyAuto(true);
+        if (!Reloading)
+        {
+            PlayerScript.PlayerAnimations.SetShoot(true);
+        }
+        else
+        {
+            PlayerScript.PlayerAnimations.SetShoot(false);
+        }
     }
     void StopShoot()
     {
-
-        if (CurrentGun.MuzzleFlash.isPlaying)
+        if (CurrentGun && CurrentGun.MuzzleFlash.isPlaying)
         {
-            Debug.Log("Stop Particle");
             CurrentGun.MuzzleFlash.Stop();
         }
 
         ShootHeld = false;
-        thisAnim.SetBodyHorizontal(0);
-        thisAnim.SetHeadHorizontal(0);
 
-        thisAnim.SetShoot(false);
-       
+        PlayerScript.PlayerAnimations.SetBodyHorizontal(0);
+        PlayerScript.PlayerAnimations.SetHeadHorizontal(0);
+
+        PlayerScript.PlayerAnimations.SetShoot(false);
+
+        PlayerScript.PlayerAnimations.SetFullyAuto(false);
     }
 
     public void ShootBullet()
@@ -140,36 +134,36 @@ public class PlayerShooting : MonoBehaviour
             {
                 Reload();
             }
-            
             return;
-        
         }
 
         CurrentGun.ShootBullet();
 
         CurrentGun.MagSize--;
 
-        GetComponent<PlayerHUD>().UpdateMagAmmoText(CurrentGun.MagSize);
+        PlayerScript.PlayerHUD.UpdateMagAmmoText(CurrentGun.MagSize);
 
     }
 
     void Reload()
     {
+        Reloading = true;
         int totalAmmo = 0;
         if(CurrentGun.GetComponent<Interact>().type == Interact.ItemType.Rifle)
         {
-            totalAmmo = inventory.RifleAmmo;
+            totalAmmo = PlayerScript.PlayerInventory.RifleAmmo;
         }
         else if (CurrentGun.GetComponent<Interact>().type == Interact.ItemType.Pistol)
         {
-            totalAmmo = inventory.PistolAmmo;
+            totalAmmo = PlayerScript.PlayerInventory.PistolAmmo;
         }
 
-        if (totalAmmo <= 0) return; 
-
-        Reloading = true;
-
-        thisAnim.SetReload(true);
+        if (totalAmmo <= 0)
+        {
+            StopShoot(); 
+            return;
+        }
+        PlayerScript.PlayerAnimations.SetReload(true);
        
     }
 
@@ -178,37 +172,37 @@ public class PlayerShooting : MonoBehaviour
     {
         if (CurrentGun.GetComponent<Interact>().type == Interact.ItemType.Rifle)
         {
-            if (inventory.RifleAmmo >= CurrentGun.TotalMagSize)
+            if (PlayerScript.PlayerInventory.RifleAmmo >= CurrentGun.TotalMagSize)
             {
-                inventory.RifleAmmo -= CurrentGun.TotalMagSize;
+                PlayerScript.PlayerInventory.RifleAmmo -= CurrentGun.TotalMagSize;
                 CurrentGun.MagSize = CurrentGun.TotalMagSize;
 
             }
             else
             {
-                CurrentGun.MagSize = inventory.RifleAmmo;
-                inventory.RifleAmmo = 0;
+                CurrentGun.MagSize = PlayerScript.PlayerInventory.RifleAmmo;
+                PlayerScript.PlayerInventory.RifleAmmo = 0;
             }
-            GetComponent<PlayerHUD>().UpdateAmmoText(CurrentGun.MagSize, inventory.RifleAmmo);
+            PlayerScript.PlayerHUD.UpdateAmmoText(CurrentGun.MagSize, PlayerScript.PlayerInventory.RifleAmmo);
         }
         else if (CurrentGun.GetComponent<Interact>().type == Interact.ItemType.Pistol)
         {
-            if (inventory.PistolAmmo >= CurrentGun.TotalMagSize)
+            if (PlayerScript.PlayerInventory.PistolAmmo >= CurrentGun.TotalMagSize)
             {
-                inventory.PistolAmmo -= CurrentGun.TotalMagSize;
+                PlayerScript.PlayerInventory.PistolAmmo -= CurrentGun.TotalMagSize;
                 CurrentGun.MagSize = CurrentGun.TotalMagSize;
 
             }
             else
             {
-                CurrentGun.MagSize = inventory.PistolAmmo;
-                inventory.PistolAmmo = 0;
+                CurrentGun.MagSize = PlayerScript.PlayerInventory.PistolAmmo;
+                PlayerScript.PlayerInventory.PistolAmmo = 0;
             }
-            GetComponent<PlayerHUD>().UpdateAmmoText(CurrentGun.MagSize, inventory.PistolAmmo);
+            PlayerScript.PlayerHUD.UpdateAmmoText(CurrentGun.MagSize, PlayerScript.PlayerInventory.PistolAmmo);
         }
 
-      
-        thisAnim.SetReload(false);
+
+        PlayerScript.PlayerAnimations.SetReload(false);
         Reloading = false;
     }
 }

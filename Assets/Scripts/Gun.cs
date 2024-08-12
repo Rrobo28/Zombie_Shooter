@@ -5,24 +5,22 @@ using UnityEngine.InputSystem.HID;
 
 public class Gun : MonoBehaviour
 {
-
     public enum FireRate { Auto, SemiAuto, Melee }
 
+    [Header ("Stats")]
     public FireRate fireRate;
-
     public int MagSize;
-
     public int TotalMagSize;
-
     public float SprayAmount;
 
+    [Header("Effects")]
     public ParticleSystem MuzzleFlash;
-
-    public GameObject Muzzle;
-
     public ParticleSystem hitParticle;
 
-    void Start()
+    [Header("Bullet Spawn ")]
+    public GameObject Muzzle;
+
+    void Start ()
     {
         MagSize = TotalMagSize;
     }
@@ -30,6 +28,7 @@ public class Gun : MonoBehaviour
    public void ShootBullet()
     {
         MuzzleFlash.Play();
+
         RaycastHit hit;
         if (Physics.Raycast(Muzzle.transform.position, transform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity))
         {

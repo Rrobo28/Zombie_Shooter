@@ -7,48 +7,49 @@ using TMPro;
 public class Interact : MonoBehaviour
 {
     public enum Rarity { Common, Uncommon, Rare,Epic,Legendary }
-
     public Rarity rarity;
-   
 
     public enum ItemType { Rifle, Pistol, Melee, Consumable }
-
     public ItemType type;
 
     public Outline outline;
-
     public Canvas Message;
+    public TextMeshProUGUI MessageText;
 
     bool Disabled = false;
 
-    public TextMeshProUGUI MessageText;
+    private string Name = "";
+
     void Start()
     {
         outline = GetComponent<Outline>();
         outline.enabled = false;
         Message.enabled = false;
+        SetOutlineColour();
+    }
 
+  
 
-        if(rarity == Rarity.Uncommon)
+    void SetOutlineColour()
+    {
+        switch (rarity)
         {
-           SetColour(Color.white);
-        }
-        else if (rarity == Rarity.Common)
-        {
-            SetColour(Color.green);
-        }
-        else if (rarity == Rarity.Rare)
-        {
-            SetColour(Color.blue);
-        }
-        else if (rarity == Rarity.Epic)
-        {
-            Color32 purple = new Color32(150, 0, 255, 255);
-            SetColour(purple);
-        }
-        else if (rarity == Rarity.Rare)
-        {
-            SetColour(Color.blue);
+            case Rarity.Uncommon:
+                SetColour(Color.white);
+                break;
+            case Rarity.Common:
+                SetColour(Color.green);
+                break;
+            case Rarity.Rare:
+                SetColour(Color.blue);
+                break;
+            case Rarity.Epic:
+                Color32 purple = new Color32(150, 0, 255, 255);
+                SetColour(purple);
+                break;
+            case Rarity.Legendary:
+                SetColour(Color.yellow);
+                break;
         }
     }
 
@@ -99,12 +100,11 @@ public class Interact : MonoBehaviour
         Message.enabled = false;
 
         Disabled = true; 
-
-
     }
 
     void SetColour(Color colour)
     {
+        MessageText.text = gameObject.name;
         MessageText.color = colour;
         outline.OutlineColor = colour;
     }

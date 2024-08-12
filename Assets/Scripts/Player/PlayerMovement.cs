@@ -14,9 +14,8 @@ public class PlayerMovement : MonoBehaviour
     [Header("Rotation")]
     [SerializeField]
     private float RotationSpeed = 50;
-  
-    [Header("Controls")]
-    public bool ToggleSprint;
+
+    public bool CanMove = true;
 
     private bool Sprinting;
     private float CurrentMoveSpeed;
@@ -34,12 +33,15 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        CheckSprint();
-
         Vector3 InputVector = PlayerScript.PlayerInputHandler.GetMovementInputVector();
 
         if(InputVector == Vector3.zero)
         {
+            if(PlayerScript.PlayerInputHandler.ToggleSprint)
+            {
+                Sprinting = false;
+            }
+
             CurrentMoveSpeed = 0;
         }
         else
@@ -56,22 +58,28 @@ public class PlayerMovement : MonoBehaviour
             
         }
 
-       CharacterController.Move(InputVector.normalized * CurrentMoveSpeed * Time.deltaTime);
-       PlayerScript.PlayerAnimations.SetSpeed(CurrentMoveSpeed);
+        if (CanMove)
+        {
+            CharacterController.Move(InputVector.normalized * CurrentMoveSpeed * Time.deltaTime);
+            PlayerScript.PlayerAnimations.SetSpeed(CurrentMoveSpeed);
+        }
+     
+    }
+
+    public void ToggleSprint()
+    {
+        Sprinting = !Sprinting;
     }
 
     
-
-    void CheckSprint()
+    public void StartSprint()
     {
-        if (Input.GetButtonDown("Sprint"))
-        {
-            Sprinting = true;
-        }
-        else if (Input.GetButtonUp("Sprint"))
-        {
-            Sprinting = false;
-        }
+        Sprinting = true;
     }
+    public void StopSprint()
+    {
+        Sprinting = false;
+    }
+
 
 }
